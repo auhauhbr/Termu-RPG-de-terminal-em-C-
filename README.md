@@ -80,6 +80,7 @@ Os principais módulos são:
 ### Jogo
 
 A classe `Jogo` controla a tela inicial, a criação do personagem, o Hub, a exploração, a loja, o inventário, o status e o fim da sessão.
+<img width="1490" height="846" alt="image" src="https://github.com/user-attachments/assets/55e92298-9b0c-4b37-bcf2-e14d8558fc14" />
 
 ### Combatente
 
@@ -94,6 +95,7 @@ Essa parte foi usada para praticar herança, abstração e polimorfismo dinâmic
 A classe `Personagem` armazena nome, classe, nível, experiência, ouro, atributos, recurso, habilidades, inventário, equipamentos e efeitos de status.
 
 Ela também é responsável por subir de nível, gastar recursos, receber dano, recuperar vida, desbloquear habilidades e recalcular seus atributos.
+<img width="1403" height="837" alt="image" src="https://github.com/user-attachments/assets/9b968784-9d98-4dce-a9fa-c0862c4ef755" />
 
 ### Monstro
 
@@ -110,12 +112,15 @@ As fórmulas matemáticas ficam separadas no módulo `Regras`, para que possam s
 ### Inventário e equipamento
 
 O inventário utiliza um vetor de entradas contendo o identificador do item e sua quantidade.
+<img width="1416" height="841" alt="image" src="https://github.com/user-attachments/assets/d9b9f52d-fa60-4308-b693-6c6c184f8c79" />
 
 O equipamento utiliza um mapa que relaciona cada espaço de equipamento ao item equipado. Os espaços disponíveis são arma, armadura e acessório.
+<img width="1415" height="822" alt="image" src="https://github.com/user-attachments/assets/e8e8e357-395e-4bba-86f9-364799a8b975" />
 
 ### Loja
 
 A loja controla estoque, compra e venda. Antes de alterar ouro ou inventário, todas as condições são verificadas para evitar que uma operação incompleta deixe o estado do jogo incorreto.
+<img width="1402" height="826" alt="image" src="https://github.com/user-attachments/assets/91ffdabf-2c51-4522-bd15-edacc4328726" />
 
 ### Catálogo
 
@@ -132,6 +137,8 @@ O uso de `std::from_chars` evita depender de conversões que lançam exceções 
 A classe `Aleatorio` mantém um único gerador `std::mt19937`. Dessa forma, os sorteios não ficam espalhados pelo código e os testes podem utilizar uma semente fixa.
 
 ## Classes disponíveis
+<img width="1443" height="846" alt="image" src="https://github.com/user-attachments/assets/a4fb9f48-b0ca-4780-942b-f29222a8dc0d" />
+
 
 ### Guerreiro
 
@@ -170,6 +177,7 @@ Habilidades disponíveis:
 - Castigo Sagrado.
 
 ## Monstros
+<img width="1391" height="845" alt="image" src="https://github.com/user-attachments/assets/bc06d075-94af-469b-a295-8f6ef029fec4" />
 
 ### Lobo Selvagem
 
@@ -226,6 +234,7 @@ Ao subir de nível, o personagem recebe um Ponto de Habilidade. Esses pontos pod
 Cada evolução aumenta a força da habilidade e reduz seu custo de recurso.
 
 ## Loja e itens
+<img width="1378" height="842" alt="image" src="https://github.com/user-attachments/assets/e2fdc150-f45a-486c-8e5b-dbea71060751" />
 
 O catálogo atual possui:
 
