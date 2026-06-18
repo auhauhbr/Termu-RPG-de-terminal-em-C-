@@ -20,6 +20,8 @@ Todo o estado do jogo permanece na memória enquanto o programa está aberto. Es
 
 O jogo foi escrito em C++17 e utiliza somente a biblioteca padrão da linguagem e recursos do sistema operacional necessários para configurar o terminal em UTF-8.
 
+A apresentação segue um estilo de RPG clássico de terminal, com cores, barras de atributos, molduras e artes em texto.
+
 ## Objetivos de estudo
 
 Este projeto foi usado para praticar os seguintes assuntos:
@@ -46,9 +48,9 @@ Este projeto foi usado para praticar os seguintes assuntos:
 
 Na versão atual, o projeto possui aproximadamente:
 
-- 1.936 linhas físicas em arquivos C++;
-- 1.640 linhas de código, sem contar linhas vazias e comentários isolados;
-- 31 arquivos de código entre cabeçalhos, implementações e testes;
+- 2.451 linhas físicas em arquivos C++;
+- 2.089 linhas de código, sem contar linhas vazias e comentários isolados;
+- 34 arquivos de código entre cabeçalhos, implementações, testes e exemplos;
 - 10 classes;
 - 7 estruturas;
 - 8 enumerações fortemente tipadas;
