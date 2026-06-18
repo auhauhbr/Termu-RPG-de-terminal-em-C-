@@ -15,7 +15,6 @@ public:
     ResultadoCombate executar(Personagem& jogador, Monstro& monstro);
 
 private:
-    void mostrarVida(const Combatente& combatente) const;
     bool turnoJogador(Personagem& jogador, Monstro& monstro);
     void turnoMonstro(Personagem& jogador, Monstro& monstro, int rodada);
     void ataqueBasico(Personagem& jogador, Monstro& monstro);

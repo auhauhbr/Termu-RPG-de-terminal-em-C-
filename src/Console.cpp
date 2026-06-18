@@ -12,6 +12,13 @@ void configurarConsole() {
     // então forço UTF-8 tanto pra saída como pra entrada
     SetConsoleOutputCP(CP_UTF8);
     SetConsoleCP(CP_UTF8);
+
+    HANDLE saida = GetStdHandle(STD_OUTPUT_HANDLE);
+    DWORD modo = 0;
+
+    if (GetConsoleMode(saida, &modo)) {
+        SetConsoleMode(saida, modo | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+    }
 #endif
 }
 

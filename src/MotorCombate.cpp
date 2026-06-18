@@ -3,6 +3,7 @@
 #include "termu/Catalogo.hpp"
 #include "termu/Regras.hpp"
 #include "termu/Habilidade.hpp"
+#include "termu/Visual.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -16,11 +17,21 @@ MotorCombate::MotorCombate(Aleatorio& aleatorio, Entrada& entrada, std::ostream&
 ResultadoCombate MotorCombate::executar(Personagem& jogador, Monstro& monstro) {
     fugiu_ = false;
     int rodada = 1;
-    saida_ << "\n=== COMBATE: " << jogador.nome() << " vs. " << monstro.nome() << " ===\n";
-    if (monstro.ehChefe()) saida_ << "[CHEFE] Fugir não está disponível neste combate.\n";
+    saida_ << '\n';
+    visual::titulo(saida_, "COMBATE");
+    saida_ << visual::ciano << visual::negrito << jogador.nome() << visual::reset
+           << "  vs.  " << visual::vermelho << visual::negrito << monstro.nome()
+           << visual::reset << '\n';
+
+    if (monstro.ehChefe()) {
+        saida_ << visual::magenta << "[CHEFE] Fugir não está disponível neste combate."
+               << visual::reset << '\n';
+    }
 
     while (jogador.estaVivo() && monstro.estaVivo() && !fugiu_) {
-        saida_ << "\n--- Rodada " << rodada << " ---\n";
+        saida_ << '\n' << visual::cinza << "-------------------------- "
+               << visual::amarelo << "RODADA " << rodada << visual::cinza
+               << " --------------------------" << visual::reset << '\n';
         jogador.regenerarNoTurno();
         mostrarEstado(jogador, monstro);
 
@@ -39,7 +50,9 @@ ResultadoCombate MotorCombate::executar(Personagem& jogador, Monstro& monstro) {
         std::vector<std::string> logStatus;
         if (jogador.estaVivo()) jogador.processarFimTurno(logStatus);
         if (monstro.estaVivo()) monstro.processarFimTurno(logStatus);
-        for (const auto& linha : logStatus) saida_ << "* " << linha << '\n';
+        for (const auto& linha : logStatus) {
+            saida_ << visual::magenta << "* " << linha << visual::reset << '\n';
+        }
         ++rodada;
     }
     return jogador.estaVivo() ? ResultadoCombate::Vitoria : ResultadoCombate::Derrota;
@@ -47,10 +60,13 @@ ResultadoCombate MotorCombate::executar(Personagem& jogador, Monstro& monstro) {
 
 bool MotorCombate::turnoJogador(Personagem& jogador, Monstro& monstro) {
     while (true) {
-        saida_ << "\nSua ação:\n"
-                << "1. Atacar\n2. Usar habilidade\n3. Usar item\n4. Defender\n";
-        if (monstro.ehChefe()) saida_ << "5. Fugir [INDISPONÍVEL: chefe]\n";
-        else saida_ << "5. Fugir\n";
+        saida_ << '\n' << visual::negrito << "Sua ação:" << visual::reset << "\n\n";
+        visual::opcao(saida_, 1, "Atacar");
+        visual::opcao(saida_, 2, "Usar habilidade");
+        visual::opcao(saida_, 3, "Usar item");
+        visual::opcao(saida_, 4, "Defender");
+        visual::opcao(saida_, 5, "Fugir", !monstro.ehChefe());
+        saida_ << '\n';
 
         const auto escolha = entrada_.lerInteiro("> ", 1, 5);
         if (!escolha) return false;
@@ -63,19 +79,24 @@ bool MotorCombate::turnoJogador(Personagem& jogador, Monstro& monstro) {
         if (*escolha == 4) {
             jogadorDefendendo_ = true;
             jogador.restaurarRecurso(jogador.classePersonagem() == ClassePersonagem::Guerreiro ? 12 : 6);
-            saida_ << jogador.nome() << " assume uma postura defensiva.\n";
+            saida_ << visual::azul << jogador.nome()
+                   << " assume uma postura defensiva." << visual::reset << '\n';
             return true;
         }
         if (*escolha == 5) {
             if (monstro.ehChefe()) {
-                saida_ << "[Erro] Não é possível fugir de um chefe.\n";
+                saida_ << visual::vermelho
+                       << "[Erro] Não é possível fugir de um chefe."
+                       << visual::reset << '\n';
                 continue;
             }
             if (tentarFugir(jogador, monstro)) {
                 fugiu_ = true;
                 return false;
             }
-            saida_ << "A fuga falhou! Seu turno foi consumido.\n";
+            saida_ << visual::amarelo
+                   << "A fuga falhou! Seu turno foi consumido."
+                   << visual::reset << '\n';
             return true;
         }
     }
@@ -83,7 +104,8 @@ bool MotorCombate::turnoJogador(Personagem& jogador, Monstro& monstro) {
 
 void MotorCombate::turnoMonstro(Personagem& jogador, Monstro& monstro, int rodada) {
     if (monstro.impedeAcao()) {
-        saida_ << monstro.nome() << " está atordoado e perdeu o turno.\n";
+        saida_ << visual::magenta << monstro.nome()
+               << " está atordoado e perdeu o turno." << visual::reset << '\n';
         return;
     }
     double multiplicador = 1.0;
@@ -95,11 +117,14 @@ void MotorCombate::turnoMonstro(Personagem& jogador, Monstro& monstro, int rodad
         // abaixo de 50% o chefe fica mais bravo
         // não guardei a fase separada pq nesse projeto ele não se cura
         multiplicador = 1.55;
-        saida_ << monstro.nome() << " entra em uma fase furiosa!\n";
+        saida_ << visual::magenta << visual::negrito << monstro.nome()
+               << " entra em uma fase furiosa!" << visual::reset << '\n';
     }
 
     if (aleatorio_.chance(jogador.atributos().chanceEsquiva)) {
-        saida_ << jogador.nome() << " esquivou do ataque de " << monstro.nome() << "!\n";
+        saida_ << visual::ciano << jogador.nome()
+               << " esquivou do ataque de " << monstro.nome() << "!"
+               << visual::reset << '\n';
         jogadorDefendendo_ = false;
         return;
     }
@@ -109,14 +134,16 @@ void MotorCombate::turnoMonstro(Personagem& jogador, Monstro& monstro, int rodad
     if (jogadorDefendendo_) dano = std::max(1, dano / 2);
     jogador.receberDano(dano);
     if (jogador.classePersonagem() == ClassePersonagem::Guerreiro) jogador.restaurarRecurso(std::max(4, dano / 4));
-    saida_ << monstro.nome() << " causou " << dano << " de dano"
-            << (critico ? " crítico" : "") << ".\n";
+    saida_ << visual::vermelho << monstro.nome() << " causou "
+           << visual::negrito << dano << " de dano"
+           << (critico ? " crítico" : "") << visual::reset << ".\n";
     jogadorDefendendo_ = false;
 }
 
 void MotorCombate::ataqueBasico(Personagem& jogador, Monstro& monstro) {
     if (aleatorio_.chance(monstro.atributos().chanceEsquiva)) {
-        saida_ << monstro.nome() << " esquivou do ataque.\n";
+        saida_ << visual::amarelo << monstro.nome()
+               << " esquivou do ataque." << visual::reset << '\n';
         return;
     }
     // testa esquiva antes do crítico, pq se errou não tem dano nem status
@@ -125,8 +152,9 @@ void MotorCombate::ataqueBasico(Personagem& jogador, Monstro& monstro) {
     dano = regras::aplicarModificadoresDano(dano, critico, monstro.afinidade(Elemento::Fisico));
     monstro.receberDano(dano);
     if (jogador.classePersonagem() == ClassePersonagem::Guerreiro) jogador.restaurarRecurso(8);
-    saida_ << "Você causou " << dano << " de dano"
-            << (critico ? " crítico" : "") << ".\n";
+    saida_ << visual::verde << "Você causou " << visual::negrito
+           << dano << " de dano" << (critico ? " crítico" : "")
+           << visual::reset << ".\n";
 }
 
 bool MotorCombate::usarHabilidade(Personagem& jogador, Monstro& monstro) {
@@ -139,13 +167,18 @@ bool MotorCombate::usarHabilidade(Personagem& jogador, Monstro& monstro) {
         return false;
     }
 
-    saida_ << "\nHabilidades:\n";
+    saida_ << '\n' << visual::ciano << visual::negrito
+           << "Habilidades:" << visual::reset << '\n';
     for (std::size_t i = 0; i < disponiveis.size(); ++i) {
         const auto& [habilidade, nivelHabilidade] = disponiveis[i];
         const int custo = custoHabilidade(*habilidade, nivelHabilidade);
-        saida_ << i + 1 << ". " << habilidade->nome << " (Rank " << nivelHabilidade << ", "
+        saida_ << visual::amarelo << '[' << i + 1 << "] " << visual::reset
+                << visual::corElemento(habilidade->elemento) << habilidade->nome
+                << visual::reset << " (Rank " << nivelHabilidade << ", "
                 << custo << " " << jogador.nomeRecurso() << ')';
-        if (jogador.recursoAtual() < custo) saida_ << " [RECURSO INSUFICIENTE]";
+        if (jogador.recursoAtual() < custo) {
+            saida_ << visual::vermelho << " [RECURSO INSUFICIENTE]" << visual::reset;
+        }
         saida_ << '\n';
     }
     saida_ << disponiveis.size() + 1 << ". Voltar\n";
@@ -163,12 +196,16 @@ bool MotorCombate::usarHabilidade(Personagem& jogador, Monstro& monstro) {
         const int quantidade = std::max(1, static_cast<int>(jogador.atributos().magia *
                                                        multiplicadorHabilidade(*habilidade, nivelHabilidade)));
         jogador.curar(quantidade);
-        saida_ << habilidade->nome << " restaurou " << quantidade << " HP.\n";
+        saida_ << visual::verde << habilidade->nome << " restaurou "
+               << visual::negrito << quantidade << " HP."
+               << visual::reset << '\n';
         return true;
     }
 
     if (aleatorio_.chance(monstro.atributos().chanceEsquiva)) {
-        saida_ << monstro.nome() << " esquivou. Nenhum status foi aplicado.\n";
+        saida_ << visual::amarelo << monstro.nome()
+               << " esquivou. Nenhum status foi aplicado."
+               << visual::reset << '\n';
         return true;
     }
     const bool critico = aleatorio_.chance(jogador.atributos().chanceCritico);
@@ -179,11 +216,14 @@ bool MotorCombate::usarHabilidade(Personagem& jogador, Monstro& monstro) {
                                monstro.atributos().resistencia);
     dano = regras::aplicarModificadoresDano(dano, critico, monstro.afinidade(habilidade->elemento));
     monstro.receberDano(dano);
-    saida_ << habilidade->nome << " causou " << dano << " de dano"
-            << (critico ? " crítico" : "") << " (" << paraTexto(habilidade->elemento) << ").\n";
+    saida_ << visual::corElemento(habilidade->elemento) << habilidade->nome
+           << " causou " << visual::negrito << dano << " de dano"
+           << (critico ? " crítico" : "") << visual::reset
+           << " (" << paraTexto(habilidade->elemento) << ").\n";
     if (habilidade->status != TipoStatus::Nenhum && dano > 0 && aleatorio_.chance(habilidade->chanceStatus)) {
         monstro.adicionarStatus(habilidade->status, habilidade->duracaoStatus);
-        saida_ << monstro.nome() << " recebeu " << paraTexto(habilidade->status) << ".\n";
+        saida_ << visual::magenta << monstro.nome() << " recebeu "
+               << paraTexto(habilidade->status) << "." << visual::reset << '\n';
     }
     return true;
 }
@@ -218,19 +258,30 @@ bool MotorCombate::tentarFugir(const Personagem& jogador, const Monstro& monstro
 }
 
 void MotorCombate::mostrarEstado(const Personagem& jogador, const Monstro& monstro) const {
-    mostrarVida(jogador);
-    saida_ << " | " << jogador.nomeRecurso() << ' '
-            << jogador.recursoAtual() << '/' << static_cast<int>(jogador.atributos().recursoMaximo) << '\n';
+    const int hpJogadorMaximo = static_cast<int>(jogador.atributos().hpMaximo);
+    const int hpMonstroMaximo = static_cast<int>(monstro.atributos().hpMaximo);
+    const int recursoMaximo = static_cast<int>(jogador.atributos().recursoMaximo);
 
-    mostrarVida(monstro);
-    saida_ << " | Nv. " << monstro.nivel() << '\n';
-}
+    saida_ << visual::ciano << visual::negrito << jogador.nome() << visual::reset
+           << " | HP "
+           << visual::barra(jogador.hpAtual(), hpJogadorMaximo, 20,
+                            visual::corVida(jogador.hpAtual(), hpJogadorMaximo))
+           << ' ' << jogador.hpAtual() << '/' << hpJogadorMaximo << '\n';
+    saida_ << "  " << jogador.nomeRecurso() << ' '
+           << visual::barra(jogador.recursoAtual(), recursoMaximo, 20, visual::azul)
+           << ' ' << jogador.recursoAtual() << '/' << recursoMaximo << '\n';
 
-void MotorCombate::mostrarVida(const Combatente& combatente) const {
-    // aqui pode chegar Personagem ou Monstro
-    // o virtual chama a versão certa sem precisar ficar testando o tipo
-    saida_ << combatente.nome() << " | HP " << combatente.hpAtual() << '/'
-            << static_cast<int>(combatente.atributos().hpMaximo);
+    saida_ << visual::vermelho << visual::negrito << monstro.nome() << visual::reset
+           << " | HP "
+           << visual::barra(monstro.hpAtual(), hpMonstroMaximo, 20,
+                            visual::corVida(monstro.hpAtual(), hpMonstroMaximo))
+           << ' ' << monstro.hpAtual() << '/' << hpMonstroMaximo
+           << " | Nv. " << monstro.nivel() << '\n';
+
+    if (monstro.ehChefe() && monstro.hpAtual() < hpMonstroMaximo * 0.5) {
+        saida_ << visual::magenta << visual::negrito
+               << "  FASE II - FÚRIA SOMBRIA" << visual::reset << '\n';
+    }
 }
 
 } // namespace termu

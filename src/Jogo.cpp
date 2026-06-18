@@ -4,6 +4,7 @@
 #include "termu/MotorCombate.hpp"
 #include "termu/Regras.hpp"
 #include "termu/Habilidade.hpp"
+#include "termu/Visual.hpp"
 
 #include <algorithm>
 #include <iomanip>
@@ -18,15 +19,22 @@ void Jogo::executar() {
     while (executando_) {
         if (!menuTitulo()) break;
     }
-    saida_ << "\nObrigado por jogar Termu!\n";
+    saida_ << '\n' << visual::ciano << "Obrigado por jogar Termu!"
+           << visual::reset << '\n';
 }
 
 bool Jogo::menuTitulo() {
-    saida_ << "\n========================================\n"
-            << "            T E R M U\n"
-            << "      RPG de turno no terminal\n"
-            << "========================================\n"
-            << "1. Novo jogo\n2. Sair\n";
+    visual::limpar(saida_);
+    visual::linha(saida_);
+    saida_ << visual::amarelo << visual::negrito
+           << "                            T E R M U\n"
+           << visual::reset << visual::cinza
+           << "                  RPG de turno no terminal\n"
+           << visual::reset;
+    visual::linha(saida_);
+    visual::opcao(saida_, 1, "Novo jogo");
+    visual::opcao(saida_, 2, "Sair");
+    saida_ << '\n';
     const auto opcao = entrada_.lerInteiro("> ", 1, 2);
     if (!opcao || *opcao == 2) return false;
     if (!criarPersonagem()) return false;
@@ -35,11 +43,14 @@ bool Jogo::menuTitulo() {
 }
 
 bool Jogo::criarPersonagem() {
-    saida_ << "\nEscolha sua classe:\n";
+    visual::limpar(saida_);
+    visual::titulo(saida_, "ESCOLHA SUA CLASSE");
     for (int i = 0; i < 4; ++i) {
         const auto tipo = static_cast<ClassePersonagem>(i);
         const auto& definicao = definicaoClasse(tipo);
-        saida_ << i + 1 << ". " << paraTexto(tipo) << " - " << definicao.papel
+        saida_ << visual::amarelo << '[' << i + 1 << "] " << visual::reset
+                << visual::ciano << visual::negrito << paraTexto(tipo) << visual::reset
+                << " - " << definicao.papel
                 << " | HP " << static_cast<int>(definicao.atributosBase.hpMaximo)
                 << " | ATK " << static_cast<int>(definicao.atributosBase.ataque)
                 << " | MAG " << static_cast<int>(definicao.atributosBase.magia) << '\n';
@@ -53,16 +64,29 @@ bool Jogo::criarPersonagem() {
     monstrosDerrotados_ = 0;
     exploracoes_ = 0;
     inicioSessao_ = std::chrono::steady_clock::now();
-    saida_ << "\n" << jogador_->nome() << ", o " << paraTexto(jogador_->classePersonagem())
-            << ", inicia sua jornada com 120 Ouro e duas Poções de Vida.\n";
+    saida_ << '\n';
+    visual::mostrarArte(saida_, visual::arteClasse(jogador_->classePersonagem()), visual::ciano);
+    saida_ << visual::verde << visual::negrito << jogador_->nome() << visual::reset
+            << ", o " << paraTexto(jogador_->classePersonagem())
+            << ", inicia sua jornada com " << visual::amarelo << "120 Ouro"
+            << visual::reset << " e duas Poções de Vida.\n";
     return true;
 }
 
 void Jogo::hub() {
     while (executando_ && jogador_ && jogador_->estaVivo()) {
-        saida_ << "\n=== HUB PRINCIPAL ===\n"
-                << "1. Explorar\n2. Loja\n3. Status e habilidades\n"
-                << "4. Inventário e equipamento\n5. Sair da sessão\n";
+        saida_ << '\n';
+        visual::titulo(saida_, "HUB PRINCIPAL");
+        saida_ << visual::ciano << jogador_->nome() << visual::reset
+               << " | Nv. " << jogador_->nivel()
+               << " | " << visual::amarelo << jogador_->ouro() << " Ouro"
+               << visual::reset << '\n';
+        visual::opcao(saida_, 1, "Explorar");
+        visual::opcao(saida_, 2, "Loja");
+        visual::opcao(saida_, 3, "Status e habilidades");
+        visual::opcao(saida_, 4, "Inventário e equipamento");
+        visual::opcao(saida_, 5, "Sair da sessão");
+        saida_ << '\n';
         const auto opcao = entrada_.lerInteiro("> ", 1, 5);
         if (!opcao) { executando_ = false; return; }
         if (*opcao == 1) explorar();
@@ -85,9 +109,16 @@ void Jogo::explorar() {
         ? std::max(definicao.nivelBase, jogador_->nivel())
         : std::max(1, jogador_->nivel() + variacaoNivel);
     Monstro monstro(definicao, nivelMonstro);
-    saida_ << "\nUm " << monstro.nome() << " aparece!";
-    if (monstro.ehChefe()) saida_ << " A presença de um CHEFE domina a área.";
     saida_ << '\n';
+    visual::titulo(saida_, monstro.ehChefe() ? "ENCONTRO COM CHEFE" : "ENCONTRO");
+    saida_ << visual::vermelho << visual::negrito << monstro.nome()
+           << visual::reset << " aparece!\n";
+    visual::mostrarArte(saida_, visual::arteMonstro(monstro.nome()),
+                        monstro.ehChefe() ? visual::magenta : visual::vermelho);
+    if (monstro.ehChefe()) {
+        saida_ << visual::magenta << "A presença do chefe domina a área."
+               << visual::reset << '\n';
+    }
 
     MotorCombate combate(aleatorio_, entrada_, saida_);
     const ResultadoCombate resultado = combate.executar(*jogador_, monstro);
@@ -96,7 +127,9 @@ void Jogo::explorar() {
         return;
     }
     if (resultado == ResultadoCombate::Fugiu) {
-        saida_ << "Você escapou e retornou ao Hub sem recompensas.\n";
+        saida_ << visual::amarelo
+               << "Você escapou e retornou ao Hub sem recompensas."
+               << visual::reset << '\n';
         return;
     }
 
@@ -105,14 +138,23 @@ void Jogo::explorar() {
     const int ouro = aleatorio_.inteiro(monstro.ouroMinimo(), monstro.ouroMaximo());
     jogador_->adicionarOuro(ouro);
     const auto mensagensNivel = jogador_->adicionarXp(xp);
-    saida_ << "\n=== VITÓRIA ===\nXP recebido: " << xp << "\nOuro recebido: " << ouro << '\n';
+    saida_ << '\n';
+    visual::titulo(saida_, "VITÓRIA");
+    saida_ << visual::ciano << "XP recebido: " << xp << visual::reset
+           << "\n" << visual::amarelo << "Ouro recebido: " << ouro
+           << visual::reset << '\n';
     for (const auto& mensagem : mensagensNivel) saida_ << mensagem << '\n';
 }
 
 void Jogo::menuLoja() {
     while (true) {
-        saida_ << "\n=== LOJA === Ouro: " << jogador_->ouro()
-                << "\n1. Comprar\n2. Vender\n3. Voltar\n";
+        saida_ << '\n';
+        visual::titulo(saida_, "LOJA");
+        saida_ << "Ouro disponível: " << visual::amarelo << jogador_->ouro()
+               << visual::reset << '\n';
+        visual::opcao(saida_, 1, "Comprar");
+        visual::opcao(saida_, 2, "Vender");
+        visual::opcao(saida_, 3, "Voltar");
         const auto opcao = entrada_.lerInteiro("> ", 1, 3);
         if (!opcao || *opcao == 3) return;
 
@@ -166,7 +208,10 @@ void Jogo::menuLoja() {
 void Jogo::menuInventario() {
     while (true) {
         mostrarInventario();
-        saida_ << "\n1. Equipar item\n2. Desequipar espaco\n3. Usar consumível\n4. Voltar\n";
+        visual::opcao(saida_, 1, "Equipar item");
+        visual::opcao(saida_, 2, "Desequipar espaço");
+        visual::opcao(saida_, 3, "Usar consumível");
+        visual::opcao(saida_, 4, "Voltar");
         const auto opcao = entrada_.lerInteiro("> ", 1, 4);
         if (!opcao || *opcao == 4) return;
 
@@ -222,7 +267,8 @@ void Jogo::menuInventario() {
 void Jogo::menuStatus() {
     while (true) {
         mostrarStatus();
-        saida_ << "\n1. Evoluir habilidades\n2. Voltar\n";
+        visual::opcao(saida_, 1, "Evoluir habilidades");
+        visual::opcao(saida_, 2, "Voltar");
         const auto opcao = entrada_.lerInteiro("> ", 1, 2);
         if (!opcao || *opcao == 2) return;
         menuEvolucao();
@@ -234,7 +280,10 @@ void Jogo::menuEvolucao() {
                                                    jogador_->niveisHabilidades().end());
     if (conhecidas.empty()) return;
     while (true) {
-        saida_ << "\n=== EVOLUÇÃO DE HABILIDADES === PH: " << jogador_->pontosHabilidade() << '\n';
+        saida_ << '\n';
+        visual::titulo(saida_, "EVOLUÇÃO DE HABILIDADES");
+        saida_ << "PH disponível: " << visual::magenta
+               << jogador_->pontosHabilidade() << visual::reset << '\n';
         for (std::size_t i = 0; i < conhecidas.size(); ++i) {
             const DefinicaoHabilidade* habilidade = buscarHabilidade(conhecidas[i].first);
             const int nivelHabilidade = jogador_->niveisHabilidades().at(conhecidas[i].first);
@@ -254,14 +303,24 @@ void Jogo::menuEvolucao() {
 
 void Jogo::mostrarStatus() const {
     const Atributos& atributos = jogador_->atributos();
-    saida_ << "\n=== STATUS ===\n"
-            << "Nome: " << jogador_->nome() << " | Classe: " << paraTexto(jogador_->classePersonagem())
+    const int hpMaximo = static_cast<int>(atributos.hpMaximo);
+    const int recursoMaximo = static_cast<int>(atributos.recursoMaximo);
+
+    saida_ << '\n';
+    visual::titulo(saida_, "STATUS DO PERSONAGEM");
+    visual::mostrarArte(saida_, visual::arteClasse(jogador_->classePersonagem()), visual::ciano);
+    saida_ << visual::ciano << visual::negrito << jogador_->nome() << visual::reset
+            << " | Classe: " << paraTexto(jogador_->classePersonagem())
             << " | Nível: " << jogador_->nivel() << '\n'
             << "XP: " << jogador_->xp() << '/' << regras::xpNecessaria(jogador_->nivel())
-            << " | PH: " << jogador_->pontosHabilidade() << " | Ouro: " << jogador_->ouro() << '\n'
-            << "HP: " << jogador_->hpAtual() << '/' << static_cast<int>(atributos.hpMaximo)
-            << " | " << jogador_->nomeRecurso() << ": " << jogador_->recursoAtual()
-            << '/' << static_cast<int>(atributos.recursoMaximo) << '\n'
+            << " | PH: " << visual::magenta << jogador_->pontosHabilidade() << visual::reset
+            << " | Ouro: " << visual::amarelo << jogador_->ouro() << visual::reset << '\n'
+            << "HP  " << visual::barra(jogador_->hpAtual(), hpMaximo, 24,
+                         visual::corVida(jogador_->hpAtual(), hpMaximo))
+            << ' ' << jogador_->hpAtual() << '/' << hpMaximo << '\n'
+            << jogador_->nomeRecurso() << "  "
+            << visual::barra(jogador_->recursoAtual(), recursoMaximo, 24, visual::azul)
+            << ' ' << jogador_->recursoAtual() << '/' << recursoMaximo << '\n'
             << "ATK " << static_cast<int>(atributos.ataque) << " | MAG " << static_cast<int>(atributos.magia)
             << " | DEF " << static_cast<int>(atributos.defesa)
             << " | RES " << static_cast<int>(atributos.resistencia)
@@ -275,13 +334,15 @@ void Jogo::mostrarStatus() const {
 }
 
 void Jogo::mostrarInventario() const {
-    saida_ << "\n=== INVENTÁRIO ===\nEquipados:\n";
+    saida_ << '\n';
+    visual::titulo(saida_, "INVENTÁRIO");
+    saida_ << visual::ciano << visual::negrito << "Equipados:" << visual::reset << '\n';
     for (const EspacoEquipamento espaco : {EspacoEquipamento::Arma, EspacoEquipamento::Armadura,
                                      EspacoEquipamento::Acessorio}) {
         const std::string* id = jogador_->equipamento().equipado(espaco);
         saida_ << "- " << paraTexto(espaco) << ": " << (id ? buscarItem(*id)->nome : "Vazio") << '\n';
     }
-    saida_ << "Mochila:\n";
+    saida_ << visual::ciano << visual::negrito << "Mochila:" << visual::reset << '\n';
     if (jogador_->inventario().itens().empty()) saida_ << "- Vazia\n";
     for (const auto& entradaItem : jogador_->inventario().itens()) {
         saida_ << "- " << buscarItem(entradaItem.idItem)->nome << " x" << entradaItem.quantidade << '\n';
@@ -303,12 +364,13 @@ const ModeloMonstro& Jogo::escolherModeloMonstro() {
 void Jogo::fimDeJogo() {
     const auto tempoDecorrido = std::chrono::duration_cast<std::chrono::seconds>(
         std::chrono::steady_clock::now() - inicioSessao_).count();
-    saida_ << "\n========================================\n"
-            << "             FIM DE JOGO\n"
-            << "========================================\n"
+    saida_ << '\n';
+    visual::titulo(saida_, "FIM DE JOGO");
+    saida_ << visual::vermelho
             << "Nível alcançado: " << jogador_->nivel() << '\n'
             << "Monstros derrotados: " << monstrosDerrotados_ << '\n'
-            << "Tempo de jogo: " << tempoDecorrido << " segundos\n";
+            << "Tempo de jogo: " << tempoDecorrido << " segundos\n"
+            << visual::reset;
     jogador_.reset();
 }
 
