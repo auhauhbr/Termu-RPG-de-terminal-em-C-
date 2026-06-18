@@ -1,0 +1,13 @@
+# executaveis e arquivos gerados pela compilacao
+*.exe
+*.o
+*.obj
+
+# pastas de compilacao do CMake
+build/
+cmake-build-*/
+
+# arquivos temporarios de editores
+.vscode/
+.idea/
+*.user
