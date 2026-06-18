@@ -307,11 +307,7 @@ Durante a compilação, o compilador traduz os arquivos C++ para código de máq
 Sempre que algum arquivo de código é alterado, o programa precisa ser compilado novamente para que a alteração apareça no executável.
 
 ## Possíveis melhorias
-
-O projeto ainda pode receber novas áreas, mais monstros, novas habilidades, sistema de salvamento, equipamentos adicionais, mais efeitos de status, batalhas contra vários inimigos, testes maiores e ajustes de balanceamento.
-
-Como este é um projeto de estudo, as melhorias podem ser adicionadas aos poucos conforme novos assuntos de C++ forem estudados.
-
+...
 ## Considerações finais
 
 O Termu foi criado principalmente para estudar. Mesmo sendo um jogo simples de terminal, ele ajudou a trabalhar vários assuntos em conjunto e mostrou como um programa maior pode ser dividido em partes menores.
